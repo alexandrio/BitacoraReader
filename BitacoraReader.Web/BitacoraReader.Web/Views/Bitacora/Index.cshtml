@@ -1,0 +1,254 @@
+﻿@model BitacoraReader.Domain.Common.PagedResult<BitacoraReader.Application.DTOs.BitacoraDto>
+@{
+    ViewData["Title"] = "Bitácora";
+    var filter = ViewBag.CurrentFilter as BitacoraReader.Application.DTOs.BitacoraFilterDto ?? new BitacoraReader.Application.DTOs.BitacoraFilterDto();
+}
+
+<h2>Bitácora de Procesos</h2>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filtros de Búsqueda</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" asp-action="Index">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="IdJob">Job ID</label>
+                        <select name="IdJob" class="form-control">
+                             <option value="">Todos</option>
+                            @foreach (var job in (IEnumerable<int>)ViewBag.DistinctJobs)
+                            {
+                                <option value="@job" selected="@(filter.IdJob == job)">@job</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="Dia">Día</label>
+                        <input type="number" name="Dia" class="form-control" value="@filter.Dia" min="1" max="31" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="Resultado">Resultado</label>
+                        <select name="Resultado" class="form-control">
+                            <option value="">Todos</option>
+                            @foreach (var resultado in (IEnumerable<string>)ViewBag.DistinctResultados)
+                            {
+                                <option value="@resultado" selected="@(filter.Resultado == resultado)">@resultado</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="NombreArchivo">Nombre Archivo</label>
+                        <input type="text" name="NombreArchivo" class="form-control" value="@filter.NombreArchivo" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="FechaInicio">Fecha Desde</label>
+                        <input type="datetime-local" name="FechaInicio" class="form-control"
+                               value="@filter.FechaInicio?.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="FechaTermino">Fecha Hasta</label>
+                        <input type="datetime-local" name="FechaTermino" class="form-control"
+                               value="@filter.FechaTermino?.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="PageSize">Registros por página</label>
+                        <select name="PageSize" class="form-control">
+                            <option value="25" selected="@(filter.PageSize == 25)">25</option>
+                            <option value="50" selected="@(filter.PageSize == 50)">50</option>
+                            <option value="100" selected="@(filter.PageSize == 100)">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Limpiar</a>
+                    <button type="button" id="testConnection" class="btn btn-info">Probar Conexión</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+@if (Model != null && Model.Items.Any())
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Resultados (@Model.TotalCount registros)</h5>
+            <small class="text-muted">
+                Página @Model.PageNumber de @Model.TotalPages
+            </small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Job ID</th>
+                            <th>Día</th>
+                            <th>Hora</th>
+                            <th>Archivo</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Término</th>
+                            <th>Duración</th>
+                            <th>Resultado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.IdBitacora</td>
+                                <td>@item.IdJob</td>
+                                <td>@item.Dia</td>
+                                <td>@item.Hora.ToString("HH:mm:ss")</td>
+                                <td title="@item.NombreArchivo">
+                                    @(item.NombreArchivo.Length > 30 ? item.NombreArchivo.Substring(0, 30) + "..." : item.NombreArchivo)
+                                </td>
+                                <td>@item.FechaInicio.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>
+                                    @if (item.FechaTermino.HasValue)
+                                    {
+                                        @item.FechaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">En progreso</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.DuracionFormateada))
+                                    {
+                                        @item.DuracionFormateada
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(item.EsExitoso ? "bg-success" : "bg-danger")">
+                                        @item.Resultado
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", new { id = item.IdBitacora })"
+                                       class="btn btn-sm btn-outline-primary">Ver</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer">
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new {
+                                    PageNumber = Model.PageNumber - 1,
+                                    PageSize = Model.PageSize,
+                                    IdJob = filter.IdJob,
+                                    Dia = filter.Dia,
+                                    Resultado = filter.Resultado,
+                                    NombreArchivo = filter.NombreArchivo,
+                                    FechaInicioDesde = filter.FechaInicio,
+                                    FechaInicioHasta = filter.FechaTermino
+                                })">Anterior</a>
+                            </li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new {
+                                    PageNumber = i,
+                                    PageSize = Model.PageSize,
+                                    IdJob = filter.IdJob,
+                                    Dia = filter.Dia,
+                                    Resultado = filter.Resultado,
+                                    NombreArchivo = filter.NombreArchivo,
+                                    FechaInicioDesde = filter.FechaInicio,
+                                    FechaInicioHasta = filter.FechaTermino
+                                })">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new {
+                                    PageNumber = Model.PageNumber + 1,
+                                    PageSize = Model.PageSize,
+                                    IdJob = filter.IdJob,
+                                    Dia = filter.Dia,
+                                    Resultado = filter.Resultado,
+                                    NombreArchivo = filter.NombreArchivo,
+                                    FechaInicioDesde = filter.FechaInicio,
+                                    FechaInicioHasta = filter.FechaTermino
+                                })">Siguiente</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <h4 class="alert-heading">Sin resultados</h4>
+        <p>No se encontraron registros con los filtros especificados.</p>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $('#testConnection').click(function() {
+            $(this).prop('disabled', true).text('Probando...');
+
+            $.post('@Url.Action("TestConnection")')
+                .done(function(data) {
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                })
+                .fail(function() {
+                    alert('❌ Error al probar la conexión');
+                })
+                .always(function() {
+                    $('#testConnection').prop('disabled', false).text('Probar Conexión');
+                });
+        });
+    </script>
+}

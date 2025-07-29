@@ -1,0 +1,91 @@
+﻿@model BitacoraReader.Application.DTOs.BitacoraDto
+@{
+    ViewData["Title"] = "Detalles de Bitácora";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Detalles de Bitácora</h2>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Volver al listado</a>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Registro ID: @Model.IdBitacora</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Job ID:</dt>
+                    <dd class="col-sm-8">@Model.IdJob</dd>
+
+                    <dt class="col-sm-4">Día:</dt>
+                    <dd class="col-sm-8">@Model.Dia</dd>
+
+                    <dt class="col-sm-4">Hora:</dt>
+                    <dd class="col-sm-8">@Model.Hora.ToString("HH:mm:ss")</dd>
+
+                    <dt class="col-sm-4">Resultado:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.EsExitoso ? "bg-success" : "bg-danger") fs-6">
+                            @Model.Resultado
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Fecha Inicio:</dt>
+                    <dd class="col-sm-8">@Model.FechaInicio.ToString("dd/MM/yyyy HH:mm:ss")</dd>
+
+                    <dt class="col-sm-4">Fecha Término:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.FechaTermino.HasValue)
+                        {
+                            @Model.FechaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss")
+                        }
+                        else
+                        {
+                            <span class="text-muted">En progreso</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Duración:</dt>
+                    <dd class="col-sm-8">
+                        @if (!string.IsNullOrEmpty(Model.DuracionFormateada))
+                        {
+                            <span class="badge bg-info">@Model.DuracionFormateada</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Estado:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.EstaCompleto)
+                        {
+                            <span class="badge bg-success">Completado</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">En progreso</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <dt>Nombre del Archivo:</dt>
+                <dd class="mt-2">
+                    <div class="alert alert-light border">
+                        <code>@Model.NombreArchivo</code>
+                    </div>
+                </dd>
+            </div>
+        </div>
+    </div>
+</div>

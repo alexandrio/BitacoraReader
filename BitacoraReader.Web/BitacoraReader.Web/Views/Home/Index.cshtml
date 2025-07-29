@@ -1,0 +1,29 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Bitácora Reader</h1>
+    <p>Sistema de lectura de bitácoras SQL Server</p>
+
+    @if (ViewBag.IsConnected == true)
+    {
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">Conexión Exitosa!</h4>
+            <p>El sistema está conectado correctamente a la base de datos.</p>
+            <hr>
+            <p class="mb-0">Total de registros: <strong>@ViewBag.TotalRecords</strong></p>
+        </div>
+
+        <a class="btn btn-primary btn-lg" asp-controller="Bitacora" asp-action="Index">
+            Ver Bitácora
+        </a>
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error de Conexión</h4>
+            <p>No se pudo conectar a la base de datos. Verifique la configuración.</p>
+        </div>
+    }
+</div>

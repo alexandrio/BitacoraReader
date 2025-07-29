@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitacoraReader.Domain", ".\BitacoraReader.Domain\BitacoraReader.Domain\BitacoraReader.Domain.csproj", "{3F2FB8BD-6AAD-4DB9-A45A-B0D864187497}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitacoraReader.Application", ".\BitacoraReader.Application\BitacoraReader.Application\BitacoraReader.Application.csproj", "{D5AC5EB0-B001-4FAD-A274-3F3F542033E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitacoraReader.Infrastructure", ".\BitacoraReader.Infrastructure\BitacoraReader.Infrastructure\BitacoraReader.Infrastructure.csproj", "{0D499DF1-9EB6-4D76-A465-B78638AAA7D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitacoraReader.Web", ".\BitacoraReader.Web\BitacoraReader.Web\BitacoraReader.Web.csproj", "{BA5843CF-F198-46B2-9AFD-8F118E47114D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F2FB8BD-6AAD-4DB9-A45A-B0D864187497}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F2FB8BD-6AAD-4DB9-A45A-B0D864187497}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F2FB8BD-6AAD-4DB9-A45A-B0D864187497}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F2FB8BD-6AAD-4DB9-A45A-B0D864187497}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5AC5EB0-B001-4FAD-A274-3F3F542033E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5AC5EB0-B001-4FAD-A274-3F3F542033E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5AC5EB0-B001-4FAD-A274-3F3F542033E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5AC5EB0-B001-4FAD-A274-3F3F542033E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D499DF1-9EB6-4D76-A465-B78638AAA7D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D499DF1-9EB6-4D76-A465-B78638AAA7D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D499DF1-9EB6-4D76-A465-B78638AAA7D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D499DF1-9EB6-4D76-A465-B78638AAA7D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA5843CF-F198-46B2-9AFD-8F118E47114D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA5843CF-F198-46B2-9AFD-8F118E47114D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA5843CF-F198-46B2-9AFD-8F118E47114D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA5843CF-F198-46B2-9AFD-8F118E47114D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
