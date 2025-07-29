@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Bitácoras</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+        }
+        
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-gradient:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            color: white;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .filter-card {
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-journal-text me-2"></i>
+                    Sistema de Bitácoras
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light btn-sm" @click="testConnection">
+                                <i class="bi bi-wifi"></i>
+                                {{ connectionStatus ? 'Conectado' : 'Desconectado' }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Loading Spinner -->
+        <div v-if="loading" class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="container-fluid py-4">
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ totalRecords.toLocaleString() }}</h3>
+                            <p class="mb-0">Total de Registros</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ distinctJobs.length }}</h3>
+                            <p class="mb-0">Jobs Distintos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ distinctResultados.length }}</h3>
+                            <p class="mb-0">Tipos de Resultado</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card">
+                        <div class="card-body text-center">
+                            <h3 class="mb-0">{{ pagedResult.totalCount.toLocaleString() }}</h3>
+                            <p class="mb-0">Registros Filtrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card filter-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>
+                        Filtros de Búsqueda
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label">ID Job</label>
+                            <select v-model="filters.idJob" class="form-select">
+                                <option value="">Todos</option>
+                                <option v-for="job in distinctJobs" :key="job" :value="job">{{ job }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Día</label>
+                            <input v-model="filters.dia" type="number" class="form-control" placeholder="Día">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Fecha Inicio</label>
+                            <input v-model="filters.fechaInicio" type="date" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Fecha Término</label>
+                            <input v-model="filters.fechaTermino" type="date" class="form-control">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Resultado</label>
+                            <select v-model="filters.resultado" class="form-select">
+                                <option value="">Todos</option>
+                                <option v-for="resultado in distinctResultados" :key="resultado" :value="resultado">
+                                    {{ resultado.length > 20 ? resultado.substring(0, 20) + '...' : resultado }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Nombre Archivo</label>
+                            <input v-model="filters.nombreArchivo" type="text" class="form-control" placeholder="Archivo">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tamaño de Página</label>
+                            <select v-model="filters.pageSize" class="form-select">
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button @click="applyFilters" class="btn btn-gradient me-2">
+                                <i class="bi bi-search me-1"></i>
+                                Buscar
+                            </button>
+                            <button @click="clearFilters" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table me-2"></i>
+                        Resultados de Bitácoras
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Job</th>
+                                    <th>Día</th>
+                                    <th>Hora</th>
+                                    <th>Archivo</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Fecha Término</th>
+                                    <th>Duración</th>
+                                    <th>Estado</th>
+                                    <th>Resultado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="bitacora in pagedResult.items" :key="bitacora.idBitacora">
+                                    <td>{{ bitacora.idBitacora }}</td>
+                                    <td>{{ bitacora.idJob }}</td>
+                                    <td>{{ bitacora.dia }}</td>
+                                    <td>{{ formatTime(bitacora.hora) }}</td>
+                                    <td>
+                                        <span :title="bitacora.nombreArchivo">
+                                            {{ bitacora.nombreArchivo.length > 20 ? bitacora.nombreArchivo.substring(0, 20) + '...' : bitacora.nombreArchivo }}
+                                        </span>
+                                    </td>
+                                    <td>{{ formatDateTime(bitacora.fechaInicio) }}</td>
+                                    <td>{{ formatDateTime(bitacora.fechaTermino) }}</td>
+                                    <td>{{ bitacora.duracionFormateada || 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge status-badge" :class="getStatusClass(bitacora)">
+                                            {{ getStatusText(bitacora) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span :title="bitacora.resultado" class="text-truncate d-inline-block" style="max-width: 200px;">
+                                            {{ bitacora.resultado }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button @click="viewDetail(bitacora)" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="pagedResult.items.length === 0">
+                                    <td colspan="11" class="text-center py-4">
+                                        <i class="bi bi-inbox text-muted fs-1"></i>
+                                        <p class="text-muted mt-2">No se encontraron registros</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-4" v-if="pagedResult.totalCount > 0">
+                <div>
+                    Mostrando {{ (pagedResult.pageNumber - 1) * pagedResult.pageSize + 1 }} - 
+                    {{ Math.min(pagedResult.pageNumber * pagedResult.pageSize, pagedResult.totalCount) }} 
+                    de {{ pagedResult.totalCount.toLocaleString() }} registros
+                </div>
+                <nav>
+                    <ul class="pagination">
+                        <li class="page-item" :class="{ disabled: !pagedResult.hasPreviousPage }">
+                            <button class="page-link" @click="goToPage(pagedResult.pageNumber - 1)" :disabled="!pagedResult.hasPreviousPage">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                        </li>
+                        <li v-for="page in visiblePages" :key="page" class="page-item" :class="{ active: page === pagedResult.pageNumber }">
+                            <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                        </li>
+                        <li class="page-item" :class="{ disabled: !pagedResult.hasNextPage }">
+                            <button class="page-link" @click="goToPage(pagedResult.pageNumber + 1)" :disabled="!pagedResult.hasNextPage">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div class="modal fade" id="detailModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Detalle de Bitácora
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" v-if="selectedBitacora">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>ID Bitácora:</strong> {{ selectedBitacora.idBitacora }}</p>
+                                <p><strong>ID Job:</strong> {{ selectedBitacora.idJob }}</p>
+                                <p><strong>Día:</strong> {{ selectedBitacora.dia }}</p>
+                                <p><strong>Hora:</strong> {{ formatTime(selectedBitacora.hora) }}</p>
+                                <p><strong>Archivo:</strong> {{ selectedBitacora.nombreArchivo }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha Inicio:</strong> {{ formatDateTime(selectedBitacora.fechaInicio) }}</p>
+                                <p><strong>Fecha Término:</strong> {{ formatDateTime(selectedBitacora.fechaTermino) }}</p>
+                                <p><strong>Duración:</strong> {{ selectedBitacora.duracionFormateada || 'N/A' }}</p>
+                                <p><strong>Estado:</strong> 
+                                    <span class="badge" :class="getStatusClass(selectedBitacora)">
+                                        {{ getStatusText(selectedBitacora) }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <p><strong>Resultado:</strong></p>
+                                <div class="border p-3 bg-light rounded">
+                                    {{ selectedBitacora.resultado }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                // Reactive state
+                const loading = ref(false);
+                const connectionStatus = ref(false);
+                const totalRecords = ref(0);
+                const distinctJobs = ref([]);
+                const distinctResultados = ref([]);
+                const pagedResult = ref({
+                    items: [],
+                    totalCount: 0,
+                    pageNumber: 1,
+                    pageSize: 50,
+                    totalPages: 0,
+                    hasPreviousPage: false,
+                    hasNextPage: false
+                });
+                const selectedBitacora = ref(null);
+
+                // Filters
+                const filters = ref({
+                    idJob: '',
+                    dia: '',
+                    fechaInicio: '',
+                    fechaTermino: '',
+                    resultado: '',
+                    nombreArchivo: '',
+                    pageNumber: 1,
+                    pageSize: 50
+                });
+
+                // API Base URL
+                const API_BASE = 'http://localhost:5218/api';
+
+                // API Methods
+                const apiCall = async (endpoint, options = {}) => {
+                    try {
+                        const response = await fetch(`${API_BASE}${endpoint}`, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...options.headers
+                            },
+                            ...options
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        return await response.json();
+                    } catch (error) {
+                        console.error('API call failed:', error);
+                        throw error;
+                    }
+                };
+
+                // Load initial data
+                const loadInitialData = async () => {
+                    loading.value = true;
+                    try {
+                        await Promise.all([
+                            testConnection(),
+                            loadTotalCount(),
+                            loadDistinctJobs(),
+                            loadDistinctResultados(),
+                            loadBitacoras()
+                        ]);
+                    } catch (error) {
+                        console.error('Error loading initial data:', error);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const testConnection = async () => {
+                    try {
+                        // Asumiendo que tienes un endpoint de health check
+                        const response = await fetch(`${API_BASE}/health`);
+                        connectionStatus.value = response.ok;
+                    } catch (error) {
+                        connectionStatus.value = false;
+                    }
+                };
+
+                const loadTotalCount = async () => {
+                    try {
+                        const count = await apiCall('/bitacora/total-count');
+                        totalRecords.value = count;
+                    } catch (error) {
+                        console.error('Error loading total count:', error);
+                    }
+                };
+
+                const loadDistinctJobs = async () => {
+                    try {
+                        const jobs = await apiCall('/bitacora/distinct-jobs');
+                        distinctJobs.value = jobs;
+                    } catch (error) {
+                        console.error('Error loading distinct jobs:', error);
+                    }
+                };
+
+                const loadDistinctResultados = async () => {
+                    try {
+                        const resultados = await apiCall('/bitacora/distinct-resultados');
+                        distinctResultados.value = resultados;
+                    } catch (error) {
+                        console.error('Error loading distinct resultados:', error);
+                    }
+                };
+
+                const loadBitacoras = async () => {
+                    loading.value = true;
+                    try {
+                        const queryParams = new URLSearchParams();
+                        
+                        Object.entries(filters.value).forEach(([key, value]) => {
+                            if (value !== '' && value !== null && value !== undefined) {
+                                queryParams.append(key, value);
+                            }
+                        });
+
+                        const result = await apiCall(`/bitacora?${queryParams.toString()}`);
+                        pagedResult.value = result;
+                    } catch (error) {
+                        console.error('Error loading bitacoras:', error);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const applyFilters = () => {
+                    filters.value.pageNumber = 1;
+                    loadBitacoras();
+                };
+
+                const clearFilters = () => {
+                    filters.value = {
+                        idJob: '',
+                        dia: '',
+                        fechaInicio: '',
+                        fechaTermino: '',
+                        resultado: '',
+                        nombreArchivo: '',
+                        pageNumber: 1,
+                        pageSize: filters.value.pageSize
+                    };
+                    loadBitacoras();
+                };
+
+                const goToPage = (page) => {
+                    filters.value.pageNumber = page;
+                    loadBitacoras();
+                };
+
+                const viewDetail = (bitacora) => {
+                    selectedBitacora.value = bitacora;
+                    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+                    modal.show();
+                };
+
+                // Utility methods
+                const formatDateTime = (dateString) => {
+                    if (!dateString) return 'N/A';
+                    return new Date(dateString).toLocaleString('es-ES');
+                };
+
+                const formatTime = (timeString) => {
+                    if (!timeString) return 'N/A';
+                    return timeString;
+                };
+
+                const getStatusClass = (bitacora) => {
+                    if (!bitacora.estaCompleto) return 'bg-warning';
+                    return bitacora.esExitoso ? 'bg-success' : 'bg-danger';
+                };
+
+                const getStatusText = (bitacora) => {
+                    if (!bitacora.estaCompleto) return 'En Proceso';
+                    return bitacora.esExitoso ? 'Exitoso' : 'Error';
+                };
+
+                // Computed properties
+                const visiblePages = computed(() => {
+                    const pages = [];
+                    const total = pagedResult.value.totalPages;
+                    const current = pagedResult.value.pageNumber;
+                    
+                    let start = Math.max(1, current - 2);
+                    let end = Math.min(total, current + 2);
+                    
+                    for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                    }
+                    
+                    return pages;
+                });
+
+                // Watchers
+                watch(() => filters.value.pageSize, () => {
+                    filters.value.pageNumber = 1;
+                    loadBitacoras();
+                });
+
+                // Lifecycle
+                onMounted(() => {
+                    loadInitialData();
+                });
+
+                return {
+                    loading,
+                    connectionStatus,
+                    totalRecords,
+                    distinctJobs,
+                    distinctResultados,
+                    pagedResult,
+                    selectedBitacora,
+                    filters,
+                    visiblePages,
+                    testConnection,
+                    applyFilters,
+                    clearFilters,
+                    goToPage,
+                    viewDetail,
+                    formatDateTime,
+                    formatTime,
+                    getStatusClass,
+                    getStatusText
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "bitacora-vue-app",
+  "version": "1.0.0",
+  "description": "A Vue.js application for managing bitacoras.",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "bootstrap": "^5.3.0"
+  },
+  "devDependencies": {
+    "vite": "^4.0.0",
+    "@vitejs/plugin-vue": "^4.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
